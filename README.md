@@ -1,0 +1,216 @@
+
+
+# 将浏览记录从一维数组型处理成二维数组，删除多条记录后在根据返回的一维数组数据追加到二维数组中
+
+前端小白，在做浏览记录时后台返回的按照时间（年月日格式）排列的一维数组，前台需要处理后展示在页面上，选中删除后再返回对应条数的数据，追加到前台数据和页面上，本人在写小程序，所以用小程序代码做示例
+## 动图展示
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20201206101040628.gif#pic_center)
+
+## 数据示例
+
+```javascript
+[   // 模拟后台传递过来的数据格式
+      {
+        createTime: "2020-12-06",
+        id: "1",
+      }, {
+        createTime: "2020-12-06",
+        id: "2",
+      }, {
+        createTime: "2020-12-05",
+        id: "3",
+      },
+      ……
+    ]
+```
+
+```javascript
+[	// 处理后的数据格式
+      [
+        { "createTime": "2020-12-06", "id": "1", "checked": false },
+        { "createTime": "2020-12-06", "id": "2", "checked": false },
+        { "createTime": "2020-12-06", "id": "3", "checked": false },
+        { "createTime": "2020-12-06", "id": "4", "checked": false }
+      ], [
+        { "createTime": "2020-12-05", "id": "5", "checked": false },
+        { "createTime": "2020-12-05", "id": "6", "checked": false },
+        { "createTime": "2020-12-05", "id": "7", "checked": false },
+        { "createTime": "2020-12-05", "id": "8", "checked": false },
+        { "createTime": "2020-12-05", "id": "9", "checked": false }
+      ]
+    ]
+```
+
+## 整体思路
+ 1. **初始请求时** ，将请求到的数据保存到待处理的变量中；
+ 2. **第一次处理数据**，将第一条数据放入二维数组中的第一个数组中，循环后续数据，通过每次判断当前数据的产生日期是否跟二维数组中的最后一项数组的最后一项数据的产生日期是否相等 来决定是否要在二维数组后面追加一个数组来存放不是同一天的数据，最后将数据追加到二维数组的最后一项数组的最后（刚才已经判断了是不是同一天的数据），
+ 3. **点击切换选中状态**，每个数据中有一个变量控制着该数据的选中状态，每次点击直接取反；
+ 4. **点击删除**，遍历出要删除的数据项，记录下并向后台发送，后台删除几条返回几条，前台将未删除项通过一个数组接住；
+
+
+ 5. **返回数据做拼接**，跟第2步中的第一次处理数据逻辑基本相同，循环数据判断是否不是同一天来追加数组，最后前台展示，依次类推；
+
+## 函数方法介绍
+
+ - 处理数组的函数：首次处理和后续拼接处理通用，需判断前台显示的二维数组的长度；
+ - 点击选中的函数：获取到当前点击的数据，将数据的选中状态取反；
+ - 点击删除函数：循环用于前台显示的二维数组，选出被选中的保存到待删除的数组中，未被选中的放到另一个新数组中用于替换掉删除前的数据
+ 
+	**上代码**
+```javascript
+ 
+Page({
+  data: {
+    toDealList: [],   // 等待去处理的数组
+    originalList: [   // 模拟首次加载的数据
+      {
+        createTime: "2020-12-06",
+        id: "1",
+      }, {
+        createTime: "2020-12-06",
+        id: "2",
+      }, {
+        createTime: "2020-12-06",
+        id: "3",
+      }, {
+        createTime: "2020-12-06",
+        id: "4",
+      }, {
+        createTime: "2020-12-05",
+        id: "5",
+      }, {
+        createTime: "2020-12-05",
+        id: "6",
+      }, {
+        createTime: "2020-12-05",
+        id: "7",
+      }, {
+        createTime: "2020-12-05",
+        id: "8",
+      }, {
+        createTime: "2020-12-05",
+        id: "9",
+      },
+    ],
+    backList: [       // 后续的数据 删多少条返回多少条 直到这个数组中没有数据
+      {
+        createTime: "2020-12-05",
+        id: "10",
+      }, {
+        createTime: "2020-12-05",
+        id: "11",
+      }, {
+        createTime: "2020-12-05",
+        id: "12",
+      }, {
+        createTime: "2020-12-04",
+        id: "13",
+      }, {
+        createTime: "2020-12-04",
+        id: "14",
+      }, {
+        createTime: "2020-12-04",
+        id: "15",
+      }, {
+        createTime: "2020-12-03",
+        id: "16",
+      }, {
+        createTime: "2020-12-03",
+        id: "17",
+      }, {
+        createTime: "2020-12-03",
+        id: "18",
+      },
+    ],
+    list: [[]],            // 经过处理的 显示在前端的数据
+  },
+
+  // 处理数组的函数
+  dealFun() {
+    let list = this.data.list
+    let toDealList = this.data.toDealList
+    console.log(toDealList, '待处理数组')
+    // 需保证后台返回的数组长度大于一
+    if (toDealList.length > 0) {
+      // 将第一个数据放到第一个数组中
+      // 如果是第一次处理 数组中的第一个数组会没有数据 需要将第一个待处理数据放到里面 并且从第二个开始循环
+      let isFirst = false
+      if (list[0].length == 0) {
+        isFirst = true
+        list[0][0] = toDealList[0]
+        toDealList[0].checked = false
+      }
+      // 如果是第一次处理 数组中的第一个数组会没有数据 需要将第一个待处理数据放到里面 并且从第二个开始循环
+      for (let index = (isFirst ? 1 : 0); index < toDealList.length; index++) {
+        toDealList[index].checked = false
+        // 如果当前的日期 不等于前台展示的数组中的最后一个日期了 就代表当前循环项是前一天的数据了
+        // console.log(list[list.length - 1][list[list.length - 1].length - 1])
+        if (toDealList[index].createTime != list[list.length - 1][list[list.length - 1].length - 1].createTime) {
+          // 重新添加一个空数组 放前的一天的数据
+          list.push([])
+        }
+        // 直接将循环项放到 前端展示的数组中的最后一个数组的最后
+        list[list.length - 1].push(toDealList[index])
+      }
+      console.log(list, '循环完成后的数组')
+    }
+    this.setData({
+      list,
+    })
+  },
+
+  // 点击选中函数
+  choose(e) {
+    let indexs = e.target.dataset.indexs
+    let index = e.target.dataset.index
+    if (index !== undefined) {
+      let item = this.data.list[indexs][index]
+      item.checked = !item.checked
+      // console.log(item)
+      this.setData({
+        // [`this.data.list[${indexs}][${index}]`]: this.data.list[indexs][index],  // 这样修改 数据已经发生改变 但却不会触发页面更改  是为什么呢
+        list: this.data.list,
+      })
+    }
+  },
+
+  // 点击删除
+  delete() {
+    let list = this.data.list
+    let newArr = []
+    let delArr = []   // 用于记录当前删除的条数  并可用于向后台发送要删除的数据的id
+    // 遍历时直接改变当前遍历的数组 会造成逻辑混乱
+    // 所以此处用另外一个数组接住（newArr）
+    list.forEach(item => {
+      let arr = []      // 定义数组 一会存放每一天的记录
+      item.forEach(i => {
+        if (i.checked) {
+          //  选中的代表要删除的  他的id放到待删除的id的数组中
+          delArr.push(i.id)
+        } else {
+          //  没有被选中的就正常放到新定义的存放每一天的数组中（而不是直接在这截取删除掉该数据 是因为在遍历时直接改变当前遍历的数组会造成逻辑混乱）
+          arr.push(i)
+        }
+      })
+      // 此处是为了判断防止把某一天的所有数据都删除掉
+      if (arr.length > 0) {
+        newArr.push(arr)
+      }
+    })
+    console.log(newArr, '删除完之后的数组（因为是数组（引用型数），打印出来会跟删除完之后处理完的数组是一样的）')
+    this.data.list = newArr
+    // 模拟后台在删除之后返回数据 将返回数据存贮到待处理函数中
+    let backList = this.data.backList.splice(0, delArr.length)
+    this.data.toDealList = backList
+    this.dealFun()
+  },
+
+  onLoad: function () {
+    // 模拟后台第一次返回数据 将返回数据存贮到待处理函数中
+    this.data.toDealList = this.data.originalList
+    this.dealFun()
+  },
+})
+
+```
+半路出家的前端小白，仅以次文章作为记录，如若有任何逻辑或代码可优化方法，欢迎评论交流！
