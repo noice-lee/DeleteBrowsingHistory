@@ -1,0 +1,12 @@
+<scroll-view class="scroll_view" scroll-y="{{true}}">
+  <view wx:for="{{list}}" wx:key="index" wx:for-index="indexs" wx:for-item="items" bindtap="choose">
+    <view>{{items[0].createTime}}</view>
+    <view class="item" wx:for="{{items}}" wx:key="index" data-indexs="{{indexs}}" data-index="{{index}}">
+      {{item.id}}
+      {{item.checked ? '选中' : ''}}
+    </view>
+  </view>
+</scroll-view>
+<view style="height:50%;margin-top:50rpx;">
+  <button bindtap="delete">删除</button>
+</view>

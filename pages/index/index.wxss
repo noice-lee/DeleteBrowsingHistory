@@ -1,0 +1,19 @@
+page {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 30rpx 50rpx;
+}
+
+.scroll_view {
+  height: 69rpx;
+  flex: 1;
+}
+
+.item {
+  display: flex;
+  line-height: 50rpx;
+  margin-left: 40rpx;
+}
